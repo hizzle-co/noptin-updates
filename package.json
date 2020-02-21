@@ -1,10 +1,11 @@
 {
   "name": "noptin-updates",
-  "version": "1.0.2",
+  "version": "1.0.1",
   "description": "Automatic updates for Noptin Plugins and Themes",
   "main": "index.js",
   "scripts": {
-    "test": "test"
+    "test": "test",
+    "release": "release-it"
   },
   "repository": {
     "type": "git",
@@ -18,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/hizzle-co/noptin-updates/issues"
   },
-  "homepage": "https://github.com/hizzle-co/noptin-updates#readme"
+  "homepage": "https://github.com/hizzle-co/noptin-updates#readme",
+  "devDependencies": {
+    "@semantic-release/changelog": "^5.0.0"
+  }
 }
