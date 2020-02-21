@@ -1,0 +1,22 @@
+{
+  "name": "noptin-updates",
+  "version": "1.0.1",
+  "description": "Automatic updates for Noptin Plugins and Themes",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hizzle-co/noptin-updates.git"
+  },
+  "keywords": [
+    "noptin"
+  ],
+  "author": "picocodes",
+  "license": "GPL-2.0+",
+  "bugs": {
+    "url": "https://github.com/hizzle-co/noptin-updates/issues"
+  },
+  "homepage": "https://github.com/hizzle-co/noptin-updates#readme"
+}

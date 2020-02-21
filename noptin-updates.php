@@ -682,3 +682,7 @@ class Noptin_Updates {
 if ( is_admin() ) {
 	Noptin_Updates::instance();
 }
+
+// /repos/:owner/:repo/releases/latest https://developer.github.com/v3/repos/releases/#get-the-latest-release
+
+// body created_at tag_name zipball_url author->avatar_url author->html_url assets[0]->browser_download_url 
