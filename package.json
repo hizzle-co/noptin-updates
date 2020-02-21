@@ -1,6 +1,6 @@
 {
   "name": "noptin-updates",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Automatic updates for Noptin Plugins and Themes",
   "main": "index.js",
   "scripts": {
