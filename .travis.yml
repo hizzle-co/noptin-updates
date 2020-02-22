@@ -15,10 +15,15 @@ branches:
 cache:
   directories:
     - vendor
-    - $HOME/.composer/cache
+    # Cache directory for older Composer versions.
+    - $HOME/.composer/cache/files
+    # Cache directory for more recent Composer versions.
+    - $HOME/.cache/composer/files
 
 matrix:
   include:
+    - php: 7.4
+      env: WP_VERSION=latest
     - php: 7.3
       env: WP_VERSION=latest
     - php: 7.1
@@ -31,11 +36,14 @@ matrix:
       env: WP_VERSION=latest
     - php: 5.6
       env: WP_VERSION=trunk
-    - php: 5.6
+    - php: 5.4
       env: WP_TRAVISCI=phpcs
     - php: 5.3
       env: WP_VERSION=4.9
       dist: precise
+
+allow_failures:
+    - php: 5.4
 
 before_script:
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
