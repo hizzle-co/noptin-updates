@@ -1,7 +1,0 @@
-{
-    "dataSource": "commits",
-    "prefix": "",
-    "includeMessages": "commits",
-    "ignoreCommitsWith": ["release", "changelog"],
-    "changelogFilename": "CHANGELOG.md"
-}
