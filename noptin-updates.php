@@ -16,7 +16,7 @@
  * Plugin Name:       Noptin Updates
  * Plugin URI:        https://noptin.com/noptin-updates/
  * Description:       Update plugins and themes provided by Noptin.
- * Version:           1.0.0
+ * Version:           1.0.2
  * Author:            Noptin Support
  * Author URI:        https://noptin.com/
  * License:           GPL-2.0+
