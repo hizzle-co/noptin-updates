@@ -98,6 +98,9 @@ class Noptin_Updates {
 		add_action( 'plugins_loaded', array( $this, 'add_notice_unlicensed_product' ), 10, 4 );
 		add_action( 'plugins_loaded', array( $this, 'load_plugin_textdomain' ), 10, 4 );
 		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqeue_scripts' ) );
+		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+		add_action( 'admin_action_noptin_updates_activated_license', array( $this, 'install_activated_license' ) );
 
 	}
 
@@ -407,15 +410,16 @@ class Noptin_Updates {
 		}
 
 		// Activate the product remotely.
-		$url      = $this->get_api_url( "licenses/activate/$license/$product" );
-		$response = wp_remote_get( add_query_arg( 'home_url', urlencode( get_home_url() ), $url ) );
+		$url      = $this->get_api_url( "activate/$license/$product" );
+		$response = $this->process_api_response( wp_remote_get( $url ) );
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
 		$this->store_activated_license( $license, $product );
 		
-		return true;
+		return json_decode( $response );
+
 	}
 
 	/**
@@ -649,7 +653,7 @@ class Noptin_Updates {
 	
 		$res = json_decode( wp_remote_retrieve_body( $response ) );
 		if( isset( $res->code ) && isset( $res->message ) ) {
-			return new WP_Error( $res->code, $res->message, $res );
+			return new WP_Error( $res->code, $res->message, $res->data );
 		}
 
 		return  wp_remote_retrieve_body( $response );
@@ -693,7 +697,7 @@ class Noptin_Updates {
 		echo "<h1>$title</h1>";
 
 		$all_addons       = $this->get_all_addons();
-		$installed_addons = $this->get_packages();
+		$active_licenses  = $this->get_active_licenses();
 
 		if ( is_wp_error( $all_addons ) ) {
 			$error = esc_html( $all_addons->get_error_message() );
@@ -755,30 +759,36 @@ class Noptin_Updates {
 			$description = esc_html( $addon->description );
 			echo "<p style='margin: 0 0 auto;'>$description</p>";
 
+			echo '<div>';
 			$url = esc_url( $addon->permalink );
 			echo "<a style='
-			display: block;
-			text-align: center;
-			border-radius: 100px;
-			margin: 16px 0;
-			box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-			padding-top: 10px;
-			padding-right: 10px;
-			padding-bottom: 10px;
-			padding-left: 10px;
-			color: #fff;
-			border-color: #009688;
-			background-color: #009688;
-			font-size: 16px;
-			line-height: 1;
-			cursor: pointer;
-			position: relative;
-			text-decoration: none;
-			overflow: hidden;
-			font-weight: 700;
-			width: 124px;
+				border-radius: 4px;
+    			box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    			padding: 10px 20px;
+    			color: #fff;
+    			border-color: #009688 !important;
+    			background-color: #009688 !important;
+    			font-size: 16px;
+    			text-decoration: none;
+    			font-weight: 700;
+    			margin-right: 20px;
 			' href='$url' target='_blank'>View</a>";
 
+			// Deactivate license key, Activate license key, Enter license key
+			$product_id   = esc_attr( $addon->product_id );
+			$product_name = esc_attr( $addon->product_name );
+
+			if ( empty( $active_licenses[ $product_id ] ) ) {
+
+				// License not activated.
+				$text = __( 'Activate license', 'noptin-updates' );
+				echo "<a href='#' data-product-id='$product_id' data-product-name='$product_name' class='noptin-updates-activate-license' style='float: right; text-decoration: none; color: #00897B; font-weight: 500;'>$text</a>";
+			} else {
+
+				// License activated.
+				echo "<a href='#' data-product-id='$product_id' class='noptin-updates-deactivate-license' style='float: right; text-decoration: none; color: #f44336; font-weight: 500;'>Deactivate license</a>";
+			}
+			echo '</div>';
 			echo '</div>';
 			echo '</div>';
 		}
@@ -799,24 +809,91 @@ class Noptin_Updates {
 		}
 
 		$response = wp_remote_get( $this->get_api_url( 'all-addons' ) );
+		$response = $this->process_api_response( $response );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 		
-		$addons = json_decode( wp_remote_retrieve_body( $response ) );
-
-		if ( ! empty( $addons['code'] ) ) {
-			return new WP_Error( $addons['code'], $addons['message'], $addons['data'] );
-		}
+		$addons = json_decode( $response );
 
 		set_transient( 'noptin_updates_addons_cache', $addons, HOUR_IN_SECONDS );
 		return $addons;
 
 	}
 
+	/**
+	 * Loads assets.
+	 * 
+	 */
+	public function enqeue_scripts() {
+
+		$version = filemtime( plugin_dir_path( __FILE__ ) . 'scripts.js' );
+		wp_register_script( 'noptin-updates', plugin_dir_url( __FILE__ ) . 'scripts.js', array( 'sweetalert2', 'jquery' ), $version, true );
+
+		$params              = array(
+			'activate_url'   => esc_url( rest_url( 'noptin-updates/v1/activate-license' ) ),
+			'deactivate_url' => esc_url( rest_url( 'noptin-updates/v1/deactivate-license' ) ),
+			'nonce'          => wp_create_nonce( 'wp_rest' ),
+		);
+
+		// localize and enqueue the script with all of the variable inserted.
+		wp_localize_script( 'noptin-updates', 'noptinUpdates', $params );
+
+		wp_enqueue_script( 'noptin-updates' );
+	}
+
+	/**
+	 * Registers routes
+	 *
+	 * @since    1.0.0
+	 */
+	public function register_rest_routes() {
+
+		// Activate license.
+        register_rest_route(
+			'noptin-updates/v1',
+			'/activate-license',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'rest_activate_license' ),
+					'permission_callback' => array( $this, 'can_manage_license' ),
+				),
+			)
+		);
+	
+	}
+
+	/**
+	 * Checks if current user can manage licenses
+	 *
+	 * @since    1.0.0
+	 */
+	public function can_manage_license() {
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return new WP_Error( 'noptin_cannot_manage_license', __( 'Sorry, you are not allowed to manage licenses as this user.' ), array( 'status' => rest_authorization_required_code() ) );
+		}
+		return true;
+	
+	}
+
+	/**
+	 * Activates a license key.
+	 * 
+	 * @param WP_REST_Request $request
+	 */
+	public function rest_activate_license( $request ) {
+
+		if ( empty( $request['product_id'] ) || empty( $request['license_key'] ) ) {
+            return new WP_Error( 'missing_data', 'Specify both the product id and license key.', array( 'status' => 400 ) );
+		}
+		
+		return $this->activate_product_license( trim( $request['product_id'] ), trim( $request['license_key'] ) );
+		
+	}
+
 }
 
-if ( is_admin() ) {
-	Noptin_Updates::instance();
-}
+Noptin_Updates::instance();
