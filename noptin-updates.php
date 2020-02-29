@@ -97,6 +97,7 @@ class Noptin_Updates {
 		add_filter( 'site_transient_' . 'update_plugins', array( $this, 'change_update_information' ) );
 		add_action( 'plugins_loaded', array( $this, 'add_notice_unlicensed_product' ), 10, 4 );
 		add_action( 'plugins_loaded', array( $this, 'load_plugin_textdomain' ), 10, 4 );
+		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
 
 	}
 
@@ -677,12 +678,145 @@ class Noptin_Updates {
 		return $transient;
 	} // End change_update_information()
 
+	/**
+	 * Registers our menu page
+	 */
+	public function register_admin_menu() {
+		add_dashboard_page( __( 'Noptin Updates', 'noptin-updates' ), __( 'Noptin Updates', 'noptin-updates' ), 'manage_options', 'noptin-updates', array( $this, 'render_menu_page' ) );
+	} // End register_admin_menu()
+
+	/**
+	 * Renders our menu page
+	 */
+	public function render_menu_page() {
+		$title = esc_html( get_admin_page_title() );
+		echo "<h1>$title</h1>";
+
+		$all_addons       = $this->get_all_addons();
+		$installed_addons = $this->get_packages();
+
+		if ( is_wp_error( $all_addons ) ) {
+			$error = esc_html( $all_addons->get_error_message() );
+			$msg   = __( 'An error occurred while retrieving the addons list', 'noptin-updates' );
+			echo "<div style='margin: 5px 0 15px; background: #fff; border-left: 4px solid #dc3232; box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .1); padding: 12px; '>$msg: <strong>$error</strong></div>";
+			return;
+		}
+
+		$tabs = array();
+
+		foreach ( $all_addons as $addon ) {
+			if ( ! isset( $tabs[ $addon->tab ] ) ) {
+				$tabs[ $addon->tab ] = array();
+			}
+			$tabs[ $addon->tab ][] = $addon;
+		}
+
+		$current_tab = isset( $_GET['tab'] ) ? sanitize_text_field( urldecode( $_GET['tab'] ) ) : 'general';
+
+		if ( ! isset( $tabs[ $current_tab ] ) ) {
+			foreach( array_keys( $tabs ) as $tab ) {
+				$current_tab = $tab;
+				break;
+			}
+		}
+
+		echo '<nav class="nav-tab-wrapper">';
+
+		foreach( array_keys( $tabs ) as $tab ) {
+			$name  = ucwords( sanitize_text_field( $tab ) );
+			$url   = esc_url( add_query_arg( 'tab', $tab ) );
+			$class = 'nav-tab';
+
+			if ( $current_tab == $tab ) {
+				$class = 'nav-tab nav-tab-active';
+			}
+			
+			echo "<a href='$url' class='$class'>$name</a>";
+		}
+
+		echo '</nav>';
+
+		echo '<div style="display: flex; -webkit-box-orient: horizontal; -webkit-box-direction: normal; flex-direction: row; flex-wrap: wrap; margin: 0 -10px 0 -10px;">';
+		foreach( $tabs[ $current_tab ] as $addon ) {
+			echo '<div style="background: #fff; border: 1px solid #e6e6e6; border-radius: 3px; flex: 0 0 300px; margin: 1em;">';
+			
+			// Logo.
+			echo '<div style="background: #f7f7f7; height: 150px; -webkit-box-align: center; align-items: center; display: -webkit-box; display: flex; -webkit-box-pack: center; justify-content: center; ">';
+			$img_url  = esc_url( $addon->image );
+			echo "<img style='height: 62px; max-width: 100%;' src='$img_url'>";
+			echo '</div>';
+
+			// Content.
+			echo '<div style="display: -webkit-box; display: flex; -webkit-box-orient: vertical; -webkit-box-direction: normal; flex-direction: column; height: 184px; -webkit-box-pack: justify; justify-content: space-between; padding: 24px;">';
+			
+			$title = esc_html( $addon->product_name );
+			echo "<h3>$title</h3>";
+
+			$description = esc_html( $addon->description );
+			echo "<p style='margin: 0 0 auto;'>$description</p>";
+
+			$url = esc_url( $addon->permalink );
+			echo "<a style='
+			display: block;
+			text-align: center;
+			border-radius: 100px;
+			margin: 16px 0;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+			padding-top: 10px;
+			padding-right: 10px;
+			padding-bottom: 10px;
+			padding-left: 10px;
+			color: #fff;
+			border-color: #009688;
+			background-color: #009688;
+			font-size: 16px;
+			line-height: 1;
+			cursor: pointer;
+			position: relative;
+			text-decoration: none;
+			overflow: hidden;
+			font-weight: 700;
+			width: 124px;
+			' href='$url' target='_blank'>View</a>";
+
+			echo '</div>';
+			echo '</div>';
+		}
+		echo '</div>';
+
+	}
+
+	/**
+	 * Return's all Noptin addons.
+	 * 
+	 * @return WP_Error|null|array
+	 */
+	public function get_all_addons() {
+		$addons = get_transient( 'noptin_updates_addons_cache' );
+
+		if ( ! empty( $addons ) && is_array ( $addons ) ) {
+			return $addons;
+		}
+
+		$response = wp_remote_get( $this->get_api_url( 'all-addons' ) );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		
+		$addons = json_decode( wp_remote_retrieve_body( $response ) );
+
+		if ( ! empty( $addons['code'] ) ) {
+			return new WP_Error( $addons['code'], $addons['message'], $addons['data'] );
+		}
+
+		set_transient( 'noptin_updates_addons_cache', $addons, HOUR_IN_SECONDS );
+		return $addons;
+
+	}
+
 }
 
 if ( is_admin() ) {
 	Noptin_Updates::instance();
 }
-
-// /repos/:owner/:repo/releases/latest https://developer.github.com/v3/repos/releases/#get-the-latest-release
-
-// body created_at tag_name zipball_url author->avatar_url author->html_url assets[0]->browser_download_url 
