@@ -398,7 +398,7 @@ class Noptin_Updates {
 	}
 
 	/**
-	 * Returns a given product's license
+	 * Activates a license for a product.
 	 *
 	 * @return WP_Error|bool
 	 */
@@ -419,6 +419,24 @@ class Noptin_Updates {
 		$this->store_activated_license( $license, $product );
 		
 		return json_decode( $response );
+
+	}
+
+	/**
+	 * Deactivates a product's license.
+	 *
+	 * @return WP_Error|bool
+	 */
+	public function deactivate_product_license( $product ) {
+
+		// Does the product have a license.
+		if ( ! $this->has_product_license( $product ) ) {
+			return new WP_Error( 'no_license', __( 'This product does not have an active license', 'noptin' ) );
+		}
+
+		$licenses           = $this->get_active_licenses();
+		unset( $licenses[$product] );
+		return update_option( 'noptin_updates_licenses', $licenses );
 
 	}
 
@@ -829,7 +847,7 @@ class Noptin_Updates {
 	public function enqeue_scripts() {
 
 		$version = filemtime( plugin_dir_path( __FILE__ ) . 'scripts.js' );
-		wp_register_script( 'noptin-updates', plugin_dir_url( __FILE__ ) . 'scripts.js', array( 'sweetalert2', 'jquery' ), $version, true );
+		wp_register_script( 'noptin-updates', plugin_dir_url( __FILE__ ) . 'scripts.js', array( 'sweetalert2', 'noptin' ), $version, true );
 
 		$params              = array(
 			'activate_url'   => esc_url( rest_url( 'noptin-updates/v1/activate-license' ) ),
@@ -858,6 +876,19 @@ class Noptin_Updates {
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'rest_activate_license' ),
+					'permission_callback' => array( $this, 'can_manage_license' ),
+				),
+			)
+		);
+
+		// Deactivate license.
+        register_rest_route(
+			'noptin-updates/v1',
+			'/deactivate-license',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'rest_deactivate_license' ),
 					'permission_callback' => array( $this, 'can_manage_license' ),
 				),
 			)
@@ -891,6 +922,21 @@ class Noptin_Updates {
 		}
 		
 		return $this->activate_product_license( trim( $request['product_id'] ), trim( $request['license_key'] ) );
+		
+	}
+
+	/**
+	 * Deactivates a license key.
+	 * 
+	 * @param WP_REST_Request $request
+	 */
+	public function rest_deactivate_license( $request ) {
+
+		if ( empty( $request['product_id'] ) ) {
+            return new WP_Error( 'missing_data', 'Product id not provided.', array( 'status' => 400 ) );
+		}
+		
+		return $this->deactivate_product_license( trim( $request['product_id'] ) );
 		
 	}
 
