@@ -93,7 +93,6 @@ class Noptin_Updates {
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_plugin_updates' ) );
 		add_filter( 'pre_set_site_transient_update_themes', array( $this, 'check_for_theme_updates' ) );
 		add_action( 'plugin_action_links', array( $this, 'render_plugin_action_links' ), 10, 4 );
-		add_filter( 'wp_prepare_themes_for_js', array( $this, 'add_theme_licence_actions' ) );
 		add_filter( 'site_transient_' . 'update_plugins', array( $this, 'change_update_information' ) );
 		add_action( 'plugins_loaded', array( $this, 'add_notice_unlicensed_product' ), 10, 4 );
 		add_action( 'plugins_loaded', array( $this, 'load_plugin_textdomain' ), 10, 4 );
@@ -392,7 +391,7 @@ class Noptin_Updates {
 	 *
 	 */
 	public function has_product_license( $product ) {
-		$license = $this->get_product_license( $product );
+		$license = $this->get_product_license( trim( $product ) );
 		return ! empty( $license );
 	}
 
@@ -527,108 +526,31 @@ class Noptin_Updates {
 	public function render_plugin_action_links( $actions, $plugin_file, $plugin_data, $context ) {
 
 		if ( ! empty( $plugin_data['Noptin ID'] ) ) {
-			$actions[] = $this->render_licence_actions($plugin_file, 'plugin');
+			$actions[] = $this->render_licence_actions( $plugin_data['Noptin ID'] );
 		}
 
 		return $actions;
 	}
 
 	/**
-	 * Adds the theme licence actions to the theme description.
-	 *
-	 * @since 1.1.0
-	 * @param array $prepared_themes The array of theme info.
-	 * @return array The modified theme array info.
-	 */
-	public function add_theme_licence_actions( $prepared_themes ){
-
-		$themes  = array_keys( $this->get_packages( 'theme' ) );
-
-		foreach ( $themes as $key ){
-			if ( isset( $prepared_themes[$key] ) ){
-				$prepared_themes[$key]['description'] = $this->render_licence_actions( $key, 'theme' ). $prepared_themes[$key]['description'];
-			}
-		}
-
-		return $prepared_themes;
-	}
-
-	/**
 	 * Builds the frontend html code to activate and deactivate licences.
 	 *
-	 * @param string $slug The plugin/theme slug or filename.
-	 * @param string $type The type of package, `plugin` or `theme`.
+	 * @param string $type The id of package, `plugin` or `theme`.
 	 * @return string The html to output.
 	 */
-	public function render_licence_actions($slug, $type, $item_ids = array()){
+	public function render_licence_actions( $id ){
 
-		$ajax_nonce = wp_create_nonce( 'noptin_updates' );
-		$licenses   = $this->get_active_licenses();
-
-		if ( isset( $licenses[ $slug ] ) && $licenses[ $slug ]->key ) {
-
-			$key                = sanitize_text_field( $licenses[ $slug ]->key );
-			$deactivate_display = "";
-			$activate_display   = " display:none;";
-			$key_disabled       = "disabled";
-			$licence_class      = "external-updates-active";
-			$licence_notice_class = "";
-
+		if ( ! $this->has_product_license( $id ) ) {
+			$licenses_url = esc_url( admin_url( 'index.php?page=noptin-updates' ) );
+			$licenses_txt = _x( 'Activate License', 'Plugin action link label.', 'noptin-updates' );
+			$html         = "<a href='$licenses_url' style='color: #009688;'>$licenses_txt</a>";
 		} else {
-			$deactivate_display = " display:none; ";
-			$activate_display   = "";
-			$key                = '';
-			$key_disabled       = '';
-			$licence_class      = '';
-			$licence_notice_class = "notice-warning";
+			$licenses_url = esc_url( admin_url( 'index.php?page=noptin-updates' ) );
+			$licenses_txt = _x( 'Deactivate License', 'Plugin action link label.', 'noptin-updates' );
+			$html         = "<a href='$licenses_url' style='color: #ad1457;'>$licenses_txt</a>";
 		}
-
-		$html = '';
-
-		if($type=='plugin'){
-			// activate link
-			$html .= '<a href="javascript:void(0);" class="external-updates-licence-toggle ' . $licence_class . '" onclick="exup_enter_licence_key(this);" >' . _x( 'Licence key', 'Plugin action link label.', 'external-updates' ) . '</a>';
-
-			// add licence activation html
-			$html .= '<div class="external-updates-key-input" style="display:none;">';
-			$html .= '<p>';
-			$html .= '<input ' . $key_disabled . ' type="text" value="' . $key . '" class="external-updates-key-value" placeholder="' . __( 'Enter your licence key', 'external-updates' ) . '" />';
-			$html .= '<span style="' . $deactivate_display . '" class="button-primary" onclick="exup_deactivate_licence_key(this,\'' . $slug . '\',\'' . $ajax_nonce . '\');">' . __( 'Deactivate', 'external-updates' ) . '</span>';
-			$html .= '<span style="' . $activate_display . '" class="button-primary" onclick="exup_activate_licence_key(this,\'' . $slug . '\',\'' . $ajax_nonce . '\');">' . __( 'Activate', 'external-updates' ) . '</span>';
-			$html .= '</p>';
-			$html .= '</div>';
-		}elseif($type=='theme'){
-
-
-			$html .= '<div class="notice '.$licence_notice_class.' notice-success notice-alt notice-large wpeu-theme-notice">';
-			$html .= '<p>'. __( 'A valid licence key is required to enable automatic updates.', 'external-updates' ) .'</p>';
-
-			// add licence activation html
-			$html .= '<div class="external-updates-key-input" >';
-			$html .= '<p>';
-			$html .= '<input ' . $key_disabled . ' type="text" value="' . $key . '" class="external-updates-key-value" placeholder="' . __( 'Enter your licence key', 'external-updates' ) . '" />';
-			$html .= '<span style="' . $deactivate_display . '" class="button-primary" onclick="exup_deactivate_theme_licence_key(this,\'' . $slug . '\',\'' . $ajax_nonce . '\');">' . __( 'Deactivate', 'external-updates' ) . '</span>';
-			$html .= '<span style="' . $activate_display . '" class="button-primary" onclick="exup_activate_theme_licence_key(this,\'' . $slug . '\',\'' . $ajax_nonce . '\');">' . __( 'Activate', 'external-updates' ) . '</span>';
-			$html .= '</p>';
-			$html .= '</div>';
-
-			$html .= '</div>';
-
-		}elseif($type=='membership'){
-			// activate link
-			//$html .= '<a href="javascript:void(0);" class="external-updates-licence-toggle ' . $licence_class . '" onclick="exup_enter_licence_key(this);" >' . _x( 'Licence key', 'Plugin action link label.', 'external-updates' ) . '</a>';
-
-			// add licence activation html
-			$html .= '<p>';
-			$html .= '<input ' . $key_disabled . ' type="text" value="' . $key . '" class="external-updates-key-value" placeholder="' . __( 'Enter your licence key', 'external-updates' ) . '" />';
-			$html .= '<span style="' . $deactivate_display . '" class="button-primary" onclick="exup_deactivate_membership_licence_key(this,\'' . $slug . '\',\'' . $ajax_nonce . '\',\'' . implode(",",$item_ids) . '\');">' . __( 'Deactivate', 'external-updates' ) . '</span>';
-			$html .= '<span style="' . $activate_display . '" class="button-primary" onclick="exup_activate_membership_licence_key(this,\'' . $slug . '\',\'' . $ajax_nonce . '\',\'' . implode(",",$item_ids) . '\');">' . __( 'Activate', 'external-updates' ) . '</span>';
-			$html .= '</p>';
-		}
-
 
 		return $html;
-
 
 	}
 
