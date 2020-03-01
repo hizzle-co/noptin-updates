@@ -24,7 +24,8 @@
  * Text Domain:       noptin-updates
  * Domain Path:       /languages
  * Requires at least: 4.9
- * Tested up to: 5.3
+ * Tested up to:      5.3
+ * Noptin ID:         1
  * 
  * Text Domain: noptin-updates
  * Domain Path: /languages/
@@ -44,7 +45,7 @@ class Noptin_Updates {
 	 * Noptin updates checker url.
 	 * @var string
 	 */
-	public static $api_url = 'http://localhost/wpi/wp-json/api/v1/';//'https://noptin.com/wp-json/api/v1/';
+	public static $api_url = 'https://noptin.com/wp-json/api/v1/';
 
 	/**
 	 * Noptin.com user key.
@@ -138,6 +139,10 @@ class Noptin_Updates {
 
 		$noptin_id= trim( $noptin_id );
 		$url      = $this->get_api_url( "plugin-info/$noptin_id" );
+
+		if ( 1 == $noptin_id ) {
+			$url      = $this->get_api_url( "plugin-info/noptin-updates" );
+		}
 
 		if ( $this->has_product_license( $noptin_id ) ) {
 			$url  = add_query_arg( 'license_key', $this->get_product_license( $noptin_id ), $url );
@@ -617,7 +622,7 @@ class Noptin_Updates {
 
 			$notice_text = sprintf(
 				/* translators: %s: updates page URL. */
-				__( 'To update, please <a href="%s">enter your license</a>.', 'noptin-updates' ),
+				__( 'To update, visit Dashboard > Noptin Updates and <a href="%s">enter your license key</a>.', 'noptin-updates' ),
 				admin_url( 'index.php?page=noptin-updates' )
 			);
 
