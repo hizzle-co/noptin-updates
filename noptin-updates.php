@@ -100,7 +100,6 @@ class Noptin_Updates {
 		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqeue_scripts' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
-		add_action( 'admin_action_noptin_updates_activated_license', array( $this, 'install_activated_license' ) );
 
 	}
 
@@ -640,7 +639,7 @@ class Noptin_Updates {
 	 * @return  void
 	 */
 	public function add_notice_unlicensed_product () {
-		if ( function_exists( 'get_plugins' ) ) {
+		if ( is_admin() && function_exists( 'get_plugins' ) ) {
 			foreach ( array_keys( $this->get_packages() ) as $key ) {
 				add_action( 'in_plugin_update_message-' . $key, array( $this, 'need_license_message' ), 10, 2 );
 			}
@@ -655,7 +654,14 @@ class Noptin_Updates {
 	 */
 	public function need_license_message ( $plugin_data, $r ) {
 		if ( empty( $r->package ) ) {
-			echo wp_kses_post( '<div class="noptin-updates-plugin-upgrade-notice">' . __( 'To update please enter your license by visiting the Dashboard > Noptin Updates screen.', 'noptin-updates' ) . '</div>' );
+
+			$msg = sprintf(
+				/* translators: %s: updates page URL. */
+				__( 'To update, please <a href="%s">enter your license</a>.', 'noptin-updates' ),
+				admin_url( 'index.php?page=noptin-updates' )
+			);
+
+			echo wp_kses_post( "<div class='noptin-updates-plugin-upgrade-notice'>$msg</div>" );
 		}
 	} // End need_license_message()
 
@@ -687,7 +693,11 @@ class Noptin_Updates {
 		global $pagenow;
 		if ( ( 'update-core.php' == $pagenow ) && $transient && isset( $transient->response ) && ! isset( $_GET['action'] ) ) {
 
-			$notice_text = __( 'To update please enter your license by visiting the Dashboard > Noptin Updates screen.' , 'noptin-updates' );
+			$notice_text = sprintf(
+				/* translators: %s: updates page URL. */
+				__( 'To update, please <a href="%s">enter your license</a>.', 'noptin-updates' ),
+				admin_url( 'index.php?page=noptin-updates' )
+			);
 
 			foreach ( $this->get_packages() as $key => $value ) {
 				if( isset( $transient->response[ $key ] ) && empty( $transient->response[ $key ]->package ) ){
