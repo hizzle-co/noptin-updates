@@ -1,6 +1,13 @@
 # Changelog
 
-All notable changes to this project will be documented in here.
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### [1.0.4](https://github.com/hizzle-co/noptin-updates/compare/v1.0.3...v1.0.4) (2020-03-01)
+
+
+### Features
+
+* Add ability to auto-update Noptin Updates ([adf12e7](https://github.com/hizzle-co/noptin-updates/commit/adf12e752928f203379c94097bc17526b1e7abb0))
 
 ### [1.0.3](https://github.com/hizzle-co/noptin-updates/compare/v1.0.2...v1.0.3) (2020-03-01)
 
