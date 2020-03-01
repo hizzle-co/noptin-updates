@@ -9,6 +9,10 @@
             "section": "Bug Fixes"
         },
         {
+            "type": "change",
+            "section": "Changes"
+        },
+        {
             "type": "chore",
             "hidden": true
         },
@@ -26,7 +30,6 @@
         },
         {
             "type": "perf",
-            "hidden": false,
             "section": "Improvements"
         },
         {
