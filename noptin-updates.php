@@ -16,7 +16,7 @@
  * Plugin Name:       Noptin Updates
  * Plugin URI:        https://noptin.com/noptin-updates/
  * Description:       Update plugins and themes provided by Noptin.
- * Version:           1.0.5
+ * Version:           1.0.6
  * Author:            Noptin Support
  * Author URI:        https://noptin.com/
  * License:           GPL-2.0+
@@ -96,6 +96,7 @@ class Noptin_Updates {
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_plugin_updates' ) );
 		add_filter( 'pre_set_site_transient_update_themes', array( $this, 'check_for_theme_updates' ) );
 		add_action( 'plugin_action_links', array( $this, 'render_plugin_action_links' ), 10, 4 );
+		add_action( 'plugin_action_links', array( $this, 'add_noptin_updates_action_links' ), 10, 4 );
 		add_filter( 'site_transient_' . 'update_plugins', array( $this, 'change_update_information' ) );
 		add_action( 'plugins_loaded', array( $this, 'add_notice_unlicensed_product' ), 10, 4 );
 		add_action( 'plugins_loaded', array( $this, 'load_plugin_textdomain' ), 10, 4 );
@@ -541,8 +542,30 @@ class Noptin_Updates {
 	 */
 	public function render_plugin_action_links( $actions, $plugin_file, $plugin_data ) {
 
-		if ( ! empty( $plugin_data['Noptin ID'] ) ) {
+		if ( ! empty( $plugin_data['Noptin ID'] ) && (int) $plugin_data['Noptin ID'] > 10 ) {
 			$actions[] = $this->render_licence_actions( $plugin_data['Noptin ID'] );
+		}
+
+		return $actions;
+	}
+
+	/**
+	 * Renders the link for the row actions on the plugins page.
+	 *
+	 * @since 1.0
+	 *
+	 * @param array  $actions An array of row action links.
+	 * @param string $plugin_file The plugin file.
+	 * @param array  $plugin_data The plugin data.
+	 *
+	 * @return array
+	 */
+	public function add_noptin_updates_action_links( $actions, $plugin_file, $plugin_data ) {
+
+		if ( 'noptin-updates/noptin-updates.php' === $plugin_file ) {
+			$licenses_url = esc_url( admin_url( 'index.php?page=noptin-updates' ) );
+			$licenses_txt = _x( 'Manage licenses', 'Plugin action link label.', 'noptin-updates' );
+			$actions[]    = "<a href='$licenses_url'>$licenses_txt</a>";
 		}
 
 		return $actions;
@@ -645,7 +668,7 @@ class Noptin_Updates {
 
 			foreach ( $this->get_packages() as $key => $value ) {
 				if ( isset( $transient->response[ $key ] ) && empty( $transient->response[ $key ]->package ) ) {
-					$message = '<div class="noptin-updates-plugin-upgrade-notice">' . $notice_text . '</div>';
+					$message                                     = '<div class="noptin-updates-plugin-upgrade-notice">' . $notice_text . '</div>';
 					$transient->response[ $key ]->upgrade_notice = wp_kses_post( $message );
 				}
 			}
