@@ -1,0 +1,95 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Noptin Updates\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-03-05 12:18+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: \n"
+"Language: \n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.3.1; wp-5.3.2"
+
+#: noptin-updates.php:756
+msgid "Activate license"
+msgstr ""
+
+#: noptin-updates.php:676
+msgid "An error occurred while retrieving the addons list"
+msgstr ""
+
+#. %s: contact page URL.
+#: noptin-updates.php:161 noptin-updates.php:176 noptin-updates.php:228
+#: noptin-updates.php:243
+#, php-format
+msgid ""
+"An unexpected error occurred. Something may be wrong with Noptin.com or this "
+"server&#8217;s configuration. If you continue to have problems, please try "
+"<a href=\"%s\">contacting us</a>."
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://noptin.com/"
+msgstr ""
+
+#. URI of the plugin
+msgid "https://noptin.com/noptin-updates/"
+msgstr ""
+
+#. Author of the plugin
+msgid "Noptin Support"
+msgstr ""
+
+#. Name of the plugin
+#: noptin-updates.php:661
+msgid "Noptin Updates"
+msgstr ""
+
+#: noptin-updates.php:561
+msgctxt "Plugin action link label."
+msgid "Activate License"
+msgstr ""
+
+#: noptin-updates.php:565
+msgctxt "Plugin action link label."
+msgid "Deactivate License"
+msgstr ""
+
+#: noptin-updates.php:889
+msgid "Product id not provided."
+msgstr ""
+
+#: noptin-updates.php:860
+msgid "Sorry, you are not allowed to manage licenses as this user."
+msgstr ""
+
+#: noptin-updates.php:874
+msgid "Specify both the product id and license key."
+msgstr ""
+
+#: noptin-updates.php:445
+msgid "This product does not have an active license"
+msgstr ""
+
+#. %s: updates page URL.
+#: noptin-updates.php:600
+#, php-format
+msgid "To update, please <a href=\"%s\">enter your license</a>."
+msgstr ""
+
+#. %s: updates page URL.
+#: noptin-updates.php:642
+#, php-format
+msgid ""
+"To update, visit Dashboard > Noptin Updates and <a href=\"%s\">enter your "
+"license key</a>."
+msgstr ""
+
+#. Description of the plugin
+msgid "Update plugins and themes provided by Noptin."
+msgstr ""
