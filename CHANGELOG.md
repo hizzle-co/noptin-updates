@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.6](https://github.com/hizzle-co/noptin-updates/compare/v1.0.5...v1.0.6) (2020-03-05)
+
+
+### Changes
+
+* add link to manage licenses on the plugin page ([9332ecc](https://github.com/hizzle-co/noptin-updates/commit/9332ecc0ccfaa59edda5814abbafe98cee698a2c))
+
 ### [1.0.5](https://github.com/hizzle-co/noptin-updates/compare/v1.0.4...v1.0.5) (2020-03-05)
 
 
